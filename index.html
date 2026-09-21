@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>마진율 계산기</title>
+<style>
+  :root {
+    --bg: #f7f7f8;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --sub: #6b6b70;
+    --border: #e5e5e7;
+    --accent: #2563eb;
+    --accent-light: #eff4ff;
+    --good: #16a34a;
+    --bad: #dc2626;
+    --header-bg: #fafafa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121214;
+      --card: #1c1c1f;
+      --text: #f0f0f2;
+      --sub: #9a9aa0;
+      --border: #2d2d31;
+      --accent: #5b8def;
+      --accent-light: #1c2a44;
+      --good: #4ade80;
+      --bad: #f87171;
+      --header-bg: #232326;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121214;
+    --card: #1c1c1f;
+    --text: #f0f0f2;
+    --sub: #9a9aa0;
+    --border: #2d2d31;
+    --accent: #5b8def;
+    --accent-light: #1c2a44;
+    --good: #4ade80;
+    --bad: #f87171;
+    --header-bg: #232326;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Pretendard", "Noto Sans KR", sans-serif;
+    padding: env(safe-area-inset-top, 0px) 16px env(safe-area-inset-bottom, 24px);
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding-top: 20px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .desc { color: var(--sub); font-size: 13px; margin-bottom: 18px; }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .summary .box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .summary .box .label { font-size: 12px; color: var(--sub); margin-bottom: 4px; }
+  .summary .box .value { font-size: 18px; font-weight: 700; }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th, td { padding: 10px 8px; font-size: 13px; border-bottom: 1px solid var(--border); text-align: right; }
+  th { background: var(--header-bg); color: var(--sub); font-weight: 600; white-space: nowrap; position: sticky; top: 0; }
+  td:first-child, th:first-child { text-align: left; padding-left: 12px; }
+  tr:last-child td { border-bottom: none; }
+
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 7px 8px;
+    font-size: 13px;
+    text-align: right;
+  }
+  td:first-child input { text-align: left; }
+
+  .margin-cell { font-weight: 700; }
+  .good { color: var(--good); }
+  .bad { color: var(--bad); }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--sub);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  .del-btn:hover { background: var(--accent-light); color: var(--bad); }
+
+  .toolbar { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  button.primary, button.ghost {
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+  }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.ghost { background: var(--card); color: var(--text); }
+  button.primary:active, button.ghost:active { opacity: 0.8; }
+
+  .empty { text-align: center; padding: 30px; color: var(--sub); font-size: 13px; }
+  .foot-note { color: var(--sub); font-size: 12px; margin-top: 14px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏷️ 마진율 계산기</h1>
+  <div class="desc">원가와 판매가만 입력하면 마진(이익)과 마진율이 바로 계산됩니다.</div>
+
+  <div class="summary">
+    <div class="box"><div class="label">상품 수</div><div class="value" id="sumCount">0</div></div>
+    <div class="box"><div class="label">총 판매가</div><div class="value" id="sumSale">0원</div></div>
+    <div class="box"><div class="label">총 원가</div><div class="value" id="sumCost">0원</div></div>
+    <div class="box"><div class="label">총 수수료</div><div class="value" id="sumFee">0원</div></div>
+    <div class="box"><div class="label">총 마진</div><div class="value" id="sumMargin">0원</div></div>
+    <div class="box"><div class="label">평균 마진율</div><div class="value" id="sumRate">0%</div></div>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>상품명</th>
+          <th>원가</th>
+          <th>판매가</th>
+          <th>수수료율(%)</th>
+          <th>실수령액</th>
+          <th>마진(이익)</th>
+          <th>마진율</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <div class="toolbar">
+    <button class="primary" id="addBtn">＋ 상품 추가</button>
+    <button class="ghost" id="clearBtn">전체 삭제</button>
+  </div>
+
+  <div class="foot-note">
+    실수령액 = 판매가 × (1 − 수수료율) · 마진 = 실수령액 − 원가 · 마진율 = 마진 ÷ 판매가 × 100 · 입력한 내용은 이 기기 브라우저에만 저장됩니다.
+  </div>
+</div>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'margin_calc_rows_v1';
+  var rowsEl = document.getElementById('rows');
+  var data = [];
+
+  function loadInit() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length) return parsed;
+      }
+    } catch (e) {}
+    return [
+      { name: '예시 상품', cost: 10000, price: 25000, fee: 10 }
+    ];
+  }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+  }
+
+  function fmt(n) {
+    if (!isFinite(n)) return '-';
+    return Math.round(n).toLocaleString('ko-KR') + '원';
+  }
+
+  function render() {
+    rowsEl.innerHTML = '';
+    if (data.length === 0) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td colspan="6" class="empty">상품을 추가해주세요</td>';
+      rowsEl.appendChild(tr);
+    }
+    var sumSale = 0, sumCost = 0, sumFee = 0;
+
+    data.forEach(function (row, idx) {
+      var cost = Number(row.cost) || 0;
+      var price = Number(row.price) || 0;
+      var feeRate = Number(row.fee) || 0;
+      var feeAmount = price * (feeRate / 100);
+      var netReceive = price - feeAmount;
+      var margin = netReceive - cost;
+      var rate = price > 0 ? (margin / price) * 100 : 0;
+      sumSale += price;
+      sumCost += cost;
+      sumFee += feeAmount;
+
+      var tr = document.createElement('tr');
+
+      var tdName = document.createElement('td');
+      var nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.placeholder = '상품명';
+      nameInput.value = row.name || '';
+      nameInput.addEventListener('input', function (e) {
+        data[idx].name = e.target.value;
+        save();
+      });
+      tdName.appendChild(nameInput);
+
+      var tdCost = document.createElement('td');
+      var costInput = document.createElement('input');
+      costInput.type = 'number';
+      costInput.inputMode = 'decimal';
+      costInput.placeholder = '0';
+      costInput.value = row.cost === '' || row.cost == null ? '' : row.cost;
+      costInput.addEventListener('input', function (e) {
+        data[idx].cost = e.target.value;
+        save();
+        render();
+      });
+      tdCost.appendChild(costInput);
+
+      var tdPrice = document.createElement('td');
+      var priceInput = document.createElement('input');
+      priceInput.type = 'number';
+      priceInput.inputMode = 'decimal';
+      priceInput.placeholder = '0';
+      priceInput.value = row.price === '' || row.price == null ? '' : row.price;
+      priceInput.addEventListener('input', function (e) {
+        data[idx].price = e.target.value;
+        save();
+        render();
+      });
+      tdPrice.appendChild(priceInput);
+
+      var tdFee = document.createElement('td');
+      var feeInput = document.createElement('input');
+      feeInput.type = 'number';
+      feeInput.inputMode = 'decimal';
+      feeInput.placeholder = '0';
+      feeInput.value = row.fee === '' || row.fee == null ? '' : row.fee;
+      feeInput.addEventListener('input', function (e) {
+        data[idx].fee = e.target.value;
+        save();
+        render();
+      });
+      tdFee.appendChild(feeInput);
+
+      var tdNet = document.createElement('td');
+      tdNet.textContent = fmt(netReceive);
+
+      var tdMargin = document.createElement('td');
+      tdMargin.className = 'margin-cell ' + (margin >= 0 ? 'good' : 'bad');
+      tdMargin.textContent = fmt(margin);
+
+      var tdRate = document.createElement('td');
+      tdRate.className = 'margin-cell ' + (rate >= 0 ? 'good' : 'bad');
+      tdRate.textContent = (price > 0 ? rate.toFixed(1) : '0.0') + '%';
+
+      var tdDel = document.createElement('td');
+      var delBtn = document.createElement('button');
+      delBtn.className = 'del-btn';
+      delBtn.textContent = '✕';
+      delBtn.addEventListener('click', function () {
+        data.splice(idx, 1);
+        save();
+        render();
+      });
+      tdDel.appendChild(delBtn);
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdCost);
+      tr.appendChild(tdPrice);
+      tr.appendChild(tdFee);
+      tr.appendChild(tdNet);
+      tr.appendChild(tdMargin);
+      tr.appendChild(tdRate);
+      tr.appendChild(tdDel);
+      rowsEl.appendChild(tr);
+    });
+
+    var totalMargin = sumSale - sumFee - sumCost;
+    var avgRate = sumSale > 0 ? (totalMargin / sumSale) * 100 : 0;
+
+    document.getElementById('sumCount').textContent = data.length + '개';
+    document.getElementById('sumSale').textContent = fmt(sumSale);
+    document.getElementById('sumCost').textContent = fmt(sumCost);
+    document.getElementById('sumFee').textContent = fmt(sumFee);
+    document.getElementById('sumMargin').textContent = fmt(totalMargin);
+    document.getElementById('sumRate').textContent = (sumSale > 0 ? avgRate.toFixed(1) : '0.0') + '%';
+  }
+
+  document.getElementById('addBtn').addEventListener('click', function () {
+    data.push({ name: '', cost: '', price: '', fee: '' });
+    save();
+    render();
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', function () {
+    if (data.length === 0) return;
+    if (confirm('전체 상품을 삭제할까요?')) {
+      data = [];
+      save();
+      render();
+    }
+  });
+
+  data = loadInit();
+  render();
+})();
+</script>
+</body>
+</html>
