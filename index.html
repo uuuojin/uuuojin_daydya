@@ -3,325 +3,354 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>마진율 계산기</title>
+<title>유진'S 데이데이</title>
 <style>
-  :root {
-    --bg: #f7f7f8;
-    --card: #ffffff;
-    --text: #1a1a1a;
-    --sub: #6b6b70;
-    --border: #e5e5e7;
-    --accent: #2563eb;
-    --accent-light: #eff4ff;
-    --good: #16a34a;
-    --bad: #dc2626;
-    --header-bg: #fafafa;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #121214;
-      --card: #1c1c1f;
-      --text: #f0f0f2;
-      --sub: #9a9aa0;
-      --border: #2d2d31;
-      --accent: #5b8def;
-      --accent-light: #1c2a44;
-      --good: #4ade80;
-      --bad: #f87171;
-      --header-bg: #232326;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #121214;
-    --card: #1c1c1f;
-    --text: #f0f0f2;
-    --sub: #9a9aa0;
-    --border: #2d2d31;
-    --accent: #5b8def;
-    --accent-light: #1c2a44;
-    --good: #4ade80;
-    --bad: #f87171;
-    --header-bg: #232326;
-  }
-  * { box-sizing: border-box; }
-  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Pretendard", "Noto Sans KR", sans-serif;
-    padding: env(safe-area-inset-top, 0px) 16px env(safe-area-inset-bottom, 24px);
-  }
-  .wrap { max-width: 900px; margin: 0 auto; padding-top: 20px; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .desc { color: var(--sub); font-size: 13px; margin-bottom: 18px; }
+  :root{--bg:#f7f7f8;--card:#fff;--text:#1a1a1a;--sub:#6b6b70;--border:#e5e5e7;
+    --accent:#2563eb;--accent-light:#eff4ff;--good:#16a34a;--bad:#dc2626;--header-bg:#fafafa;}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121214;--card:#1c1c1f;
+    --text:#f0f0f2;--sub:#9a9aa0;--border:#2d2d31;--accent:#5b8def;--accent-light:#1c2a44;
+    --good:#4ade80;--bad:#f87171;--header-bg:#232326;}}
+  :root[data-theme="dark"]{--bg:#121214;--card:#1c1c1f;--text:#f0f0f2;--sub:#9a9aa0;
+    --border:#2d2d31;--accent:#5b8def;--accent-light:#1c2a44;--good:#4ade80;--bad:#f87171;--header-bg:#232326;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Pretendard","Noto Sans KR",sans-serif;
+    padding-bottom:env(safe-area-inset-bottom,24px);}
+  .topbar{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--border);
+    padding:env(safe-area-inset-top,0px) 16px 0;z-index:10;}
+  .topbar-inner{max-width:900px;margin:0 auto;padding:14px 0 10px;}
+  h1{font-size:19px;margin:0 0 10px;}
+  .tabs{display:flex;gap:6px;}
+  .tab{border:1px solid var(--border);background:var(--bg);color:var(--sub);
+    border-radius:10px;padding:8px 14px;font-size:13.5px;font-weight:600;cursor:pointer;}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .wrap{max-width:900px;margin:0 auto;padding:18px 16px;}
+  .page{display:none;} .page.active{display:block;}
 
-  .summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 10px;
-    margin-bottom: 18px;
-  }
-  .summary .box {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 14px;
-  }
-  .summary .box .label { font-size: 12px; color: var(--sub); margin-bottom: 4px; }
-  .summary .box .value { font-size: 18px; font-weight: 700; }
+  /* 캘린더 */
+  .cal-head{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px;}
+  .cal-head button{background:var(--card);border:1px solid var(--border);border-radius:10px;
+    width:36px;height:36px;font-size:16px;cursor:pointer;color:var(--text);}
+  .cal-head .ym{font-size:17px;font-weight:700;min-width:120px;text-align:center;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .dow{text-align:center;font-size:12px;color:var(--sub);padding:4px 0;}
+  .day{aspect-ratio:1;border:1px solid var(--border);border-radius:10px;background:var(--card);
+    padding:4px;cursor:pointer;position:relative;overflow:hidden;font-size:12px;}
+  .day.empty{border:none;background:transparent;cursor:default;}
+  .day.selected{border-color:var(--accent);background:var(--accent-light);}
+  .day.today{font-weight:700;color:var(--accent);}
+  .day .dot{position:absolute;bottom:4px;left:4px;right:4px;font-size:9px;color:var(--sub);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .day .num{font-size:12px;}
+  .day .num.sat{color:#2563eb;}
+  .day .num.sun,.day .num.holiday{color:#dc2626;}
+  .day .dot.holiday{color:#dc2626;font-weight:600;}
+  .dow.sat{color:#2563eb;} .dow.sun{color:#dc2626;}
 
-  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
-  table { width: 100%; border-collapse: collapse; min-width: 640px; }
-  th, td { padding: 10px 8px; font-size: 13px; border-bottom: 1px solid var(--border); text-align: right; }
-  th { background: var(--header-bg); color: var(--sub); font-weight: 600; white-space: nowrap; position: sticky; top: 0; }
-  td:first-child, th:first-child { text-align: left; padding-left: 12px; }
-  tr:last-child td { border-bottom: none; }
+  .panel{margin-top:16px;background:var(--card);border:1px solid var(--border);
+    border-radius:14px;padding:14px;}
+  .panel h3{margin:0 0 10px;font-size:14.5px;}
+  .sched-item{display:flex;align-items:center;gap:8px;padding:6px 0;
+    border-bottom:1px solid var(--border);font-size:13.5px;}
+  .sched-item:last-child{border-bottom:none;}
+  .sched-item .time{color:var(--accent);font-weight:700;min-width:44px;}
+  .sched-item .text{flex:1;}
+  .sched-item .del{background:none;border:none;color:var(--sub);cursor:pointer;font-size:15px;}
+  .add-form{display:flex;gap:6px;margin-top:10px;}
+  .add-form input[type="time"]{width:100px;}
+  .add-form input[type="text"]{flex:1;}
+  input[type="time"],input[type="text"],input[type="number"]{border:1px solid var(--border);
+    background:var(--bg);color:var(--text);border-radius:8px;padding:7px 8px;font-size:13px;}
+  button.primary{background:var(--accent);color:#fff;border:1px solid var(--accent);
+    border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;}
+  .empty-note{color:var(--sub);font-size:13px;padding:6px 0;}
 
-  input[type="text"], input[type="number"] {
-    width: 100%;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--text);
-    border-radius: 8px;
-    padding: 7px 8px;
-    font-size: 13px;
-    text-align: right;
-  }
-  td:first-child input { text-align: left; }
-
-  .margin-cell { font-weight: 700; }
-  .good { color: var(--good); }
-  .bad { color: var(--bad); }
-
-  .del-btn {
-    background: none;
-    border: none;
-    color: var(--sub);
-    cursor: pointer;
-    font-size: 16px;
-    padding: 4px 8px;
-    border-radius: 6px;
-  }
-  .del-btn:hover { background: var(--accent-light); color: var(--bad); }
-
-  .toolbar { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-  button.primary, button.ghost {
-    border-radius: 10px;
-    padding: 9px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1px solid var(--border);
-  }
-  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  button.ghost { background: var(--card); color: var(--text); }
-  button.primary:active, button.ghost:active { opacity: 0.8; }
-
-  .empty { text-align: center; padding: 30px; color: var(--sub); font-size: 13px; }
-  .foot-note { color: var(--sub); font-size: 12px; margin-top: 14px; line-height: 1.5; }
+  /* 마진 계산기 */
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px;}
+  .summary .box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;}
+  .summary .box .label{font-size:12px;color:var(--sub);margin-bottom:4px;}
+  .summary .box .value{font-size:17px;font-weight:700;}
+  .table-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--card);}
+  table{width:100%;border-collapse:collapse;min-width:600px;}
+  th,td{padding:9px 7px;font-size:12.5px;border-bottom:1px solid var(--border);text-align:right;}
+  th{background:var(--header-bg);color:var(--sub);font-weight:600;white-space:nowrap;}
+  td:first-child,th:first-child{text-align:left;padding-left:10px;}
+  tr:last-child td{border-bottom:none;}
+  table input{width:100%;text-align:right;} table td:first-child input{text-align:left;}
+  .margin-cell{font-weight:700;} .good{color:var(--good);} .bad{color:var(--bad);}
+  .del-btn{background:none;border:none;color:var(--sub);cursor:pointer;font-size:15px;}
+  .toolbar{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  button.ghost{background:var(--card);color:var(--text);border:1px solid var(--border);
+    border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;}
 </style>
 </head>
 <body>
+<div class="topbar"><div class="topbar-inner">
+  <h1>유진'S 데이데이</h1>
+  <div class="tabs">
+    <button class="tab active" data-page="cal">📅 캘린더</button>
+    <button class="tab" data-page="margin">🏷️ 마진율 계산기</button>
+  </div>
+</div></div>
+
 <div class="wrap">
-  <h1>🏷️ 마진율 계산기</h1>
-  <div class="desc">원가와 판매가만 입력하면 마진(이익)과 마진율이 바로 계산됩니다.</div>
+  <!-- 캘린더 -->
+  <div class="page active" id="page-cal">
+    <div class="cal-head">
+      <button id="prevM">‹</button>
+      <div class="ym" id="ymLabel"></div>
+      <button id="nextM">›</button>
+    </div>
+    <div class="cal-grid" id="dowRow"></div>
+    <div class="cal-grid" id="calGrid" style="margin-top:4px;"></div>
 
-  <div class="summary">
-    <div class="box"><div class="label">상품 수</div><div class="value" id="sumCount">0</div></div>
-    <div class="box"><div class="label">총 판매가</div><div class="value" id="sumSale">0원</div></div>
-    <div class="box"><div class="label">총 원가</div><div class="value" id="sumCost">0원</div></div>
-    <div class="box"><div class="label">총 수수료</div><div class="value" id="sumFee">0원</div></div>
-    <div class="box"><div class="label">총 마진</div><div class="value" id="sumMargin">0원</div></div>
-    <div class="box"><div class="label">평균 마진율</div><div class="value" id="sumRate">0%</div></div>
+    <div class="panel">
+      <h3 id="selDateLabel"></h3>
+      <div id="schedList"></div>
+      <div class="add-form" style="flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--sub);white-space:nowrap;">
+          <input type="checkbox" id="allDay" style="width:auto;"> 하루 종일(기념일)
+        </label>
+        <input type="time" id="newTime" value="09:00">
+        <input type="text" id="newText" placeholder="일정 내용">
+        <button class="primary" id="addSched">추가</button>
+      </div>
+    </div>
   </div>
 
-  <div class="table-scroll">
-    <table>
-      <thead>
-        <tr>
-          <th>상품명</th>
-          <th>원가</th>
-          <th>판매가</th>
-          <th>수수료율(%)</th>
-          <th>실수령액</th>
-          <th>마진(이익)</th>
-          <th>마진율</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
-  </div>
-
-  <div class="toolbar">
-    <button class="primary" id="addBtn">＋ 상품 추가</button>
-    <button class="ghost" id="clearBtn">전체 삭제</button>
-  </div>
-
-  <div class="foot-note">
-    실수령액 = 판매가 × (1 − 수수료율) · 마진 = 실수령액 − 원가 · 마진율 = 마진 ÷ 판매가 × 100 · 입력한 내용은 이 기기 브라우저에만 저장됩니다.
+  <!-- 마진율 계산기 -->
+  <div class="page" id="page-margin">
+    <div class="summary">
+      <div class="box"><div class="label">상품 수</div><div class="value" id="sumCount">0</div></div>
+      <div class="box"><div class="label">총 판매가</div><div class="value" id="sumSale">0원</div></div>
+      <div class="box"><div class="label">총 원가</div><div class="value" id="sumCost">0원</div></div>
+      <div class="box"><div class="label">총 수수료</div><div class="value" id="sumFee">0원</div></div>
+      <div class="box"><div class="label">총 마진</div><div class="value" id="sumMargin">0원</div></div>
+      <div class="box"><div class="label">평균 마진율</div><div class="value" id="sumRate">0%</div></div>
+    </div>
+    <div class="table-scroll">
+      <table><thead><tr><th>상품명</th><th>원가</th><th>판매가</th><th>수수료율(%)</th>
+        <th>실수령액</th><th>마진</th><th>마진율</th><th></th></tr></thead>
+        <tbody id="rows"></tbody></table>
+    </div>
+    <div class="toolbar">
+      <button class="primary" id="addRow">＋ 상품 추가</button>
+      <button class="ghost" id="clearRows">전체 삭제</button>
+    </div>
   </div>
 </div>
 
 <script>
-(function () {
+/* ---------- 탭 전환 ---------- */
+document.querySelectorAll('.tab').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+    btn.classList.add('active');
+    document.getElementById('page-' + btn.dataset.page).classList.add('active');
+  });
+});
+
+/* ---------- 캘린더 ---------- */
+(function(){
+  var SKEY = 'yj_calendar_v1';
+  var schedules = {};
+  try { schedules = JSON.parse(localStorage.getItem(SKEY) || '{}'); } catch(e){}
+  function saveSched(){ try{ localStorage.setItem(SKEY, JSON.stringify(schedules)); }catch(e){} }
+
+  var today = new Date();
+  var viewY = today.getFullYear(), viewM = today.getMonth();
+  var selDate = fmtDate(today);
+
+  function fmtDate(d){
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  var DOW = ['일','월','화','수','목','금','토'];
+  var dowRow = document.getElementById('dowRow');
+  DOW.forEach(function(d,i){ var el=document.createElement('div');
+    el.className='dow'+(i===6?' sat':i===0?' sun':''); el.textContent=d; dowRow.appendChild(el); });
+
+  /* 대한민국 공휴일 (2025~2026, 관공서 지정 기준) */
+  var HOLIDAYS = {
+    '2025-01-01':'신정','2025-01-28':'설날연휴','2025-01-29':'설날','2025-01-30':'설날연휴',
+    '2025-03-01':'삼일절','2025-03-03':'대체공휴일','2025-05-05':'어린이날·부처님오신날',
+    '2025-05-06':'대체공휴일','2025-06-06':'현충일','2025-08-15':'광복절','2025-10-03':'개천절',
+    '2025-10-05':'추석연휴','2025-10-06':'추석','2025-10-07':'추석연휴','2025-10-08':'대체공휴일',
+    '2025-10-09':'한글날','2025-12-25':'크리스마스',
+    '2026-01-01':'신정','2026-02-16':'설날연휴','2026-02-17':'설날','2026-02-18':'설날연휴',
+    '2026-03-01':'삼일절','2026-03-02':'대체공휴일','2026-05-05':'어린이날',
+    '2026-05-24':'부처님오신날','2026-05-25':'대체공휴일','2026-06-03':'지방선거일',
+    '2026-06-06':'현충일','2026-07-17':'제헌절','2026-08-15':'광복절','2026-08-17':'대체공휴일',
+    '2026-09-24':'추석연휴','2026-09-25':'추석','2026-09-26':'추석연휴','2026-10-03':'개천절',
+    '2026-10-05':'대체공휴일','2026-10-09':'한글날','2026-12-25':'크리스마스'
+  };
+
+  function renderCal(){
+    document.getElementById('ymLabel').textContent = viewY + '년 ' + (viewM+1) + '월';
+    var grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+    var first = new Date(viewY, viewM, 1);
+    var startDow = first.getDay();
+    var daysInMonth = new Date(viewY, viewM+1, 0).getDate();
+    for (var i=0;i<startDow;i++){ var e=document.createElement('div'); e.className='day empty'; grid.appendChild(e); }
+    for (var d=1; d<=daysInMonth; d++){
+      var cellDate = new Date(viewY, viewM, d);
+      var key = fmtDate(cellDate);
+      var cell = document.createElement('div');
+      cell.className = 'day' + (key===selDate?' selected':'') + (key===fmtDate(today)?' today':'');
+      var dow = cellDate.getDay();
+      var holidayName = HOLIDAYS[key];
+      var num = document.createElement('div');
+      num.className='num'+(holidayName?' holiday':dow===6?' sat':dow===0?' sun':'');
+      num.textContent = d;
+      cell.appendChild(num);
+      var list = schedules[key] || [];
+      if (list.length){
+        var dot = document.createElement('div'); dot.className='dot';
+        dot.textContent = list.length===1 ? list[0].text : list.length+'개 일정';
+        cell.appendChild(dot);
+      } else if (holidayName){
+        var hdot = document.createElement('div'); hdot.className='dot holiday'; hdot.textContent = holidayName;
+        cell.appendChild(hdot);
+      }
+      cell.addEventListener('click', function(k){ return function(){ selDate=k; renderCal(); renderPanel(); }; }(key));
+      grid.appendChild(cell);
+    }
+  }
+
+  var allDayBox = document.getElementById('allDay');
+  var timeInput = document.getElementById('newTime');
+  allDayBox.addEventListener('change', function(){
+    timeInput.disabled = allDayBox.checked;
+    timeInput.style.opacity = allDayBox.checked ? 0.4 : 1;
+  });
+
+  function renderPanel(){
+    var d = new Date(selDate + 'T00:00:00');
+    document.getElementById('selDateLabel').textContent = (d.getMonth()+1)+'월 '+d.getDate()+'일 일정';
+    var list = schedules[selDate] || [];
+    var wrap = document.getElementById('schedList');
+    wrap.innerHTML = '';
+    if (!list.length){ wrap.innerHTML = '<div class="empty-note">등록된 일정이 없어요</div>'; return; }
+    list.sort(function(a,b){
+      if (!a.time && !b.time) return 0;
+      if (!a.time) return -1;
+      if (!b.time) return 1;
+      return a.time.localeCompare(b.time);
+    });
+    list.forEach(function(item, idx){
+      var row = document.createElement('div'); row.className='sched-item';
+      var t = document.createElement('span'); t.className='time'; t.textContent = item.time ? item.time : '종일';
+      var tx = document.createElement('span'); tx.className='text'; tx.textContent = item.text;
+      var del = document.createElement('button'); del.className='del'; del.textContent='✕';
+      del.addEventListener('click', function(){
+        schedules[selDate].splice(schedules[selDate].indexOf(item), 1);
+        if (!schedules[selDate].length) delete schedules[selDate];
+        saveSched(); renderCal(); renderPanel();
+      });
+      row.appendChild(t); row.appendChild(tx); row.appendChild(del);
+      wrap.appendChild(row);
+    });
+  }
+
+  document.getElementById('prevM').addEventListener('click', function(){
+    viewM--; if (viewM<0){viewM=11; viewY--;} renderCal();
+  });
+  document.getElementById('nextM').addEventListener('click', function(){
+    viewM++; if (viewM>11){viewM=0; viewY++;} renderCal();
+  });
+  document.getElementById('addSched').addEventListener('click', function(){
+    var isAllDay = allDayBox.checked;
+    var time = isAllDay ? '' : (timeInput.value || '00:00');
+    var text = document.getElementById('newText').value.trim();
+    if (!text) return;
+    if (!schedules[selDate]) schedules[selDate] = [];
+    schedules[selDate].push({ time: time, text: text });
+    saveSched();
+    document.getElementById('newText').value = '';
+    renderCal(); renderPanel();
+  });
+
+  renderCal(); renderPanel();
+})();
+
+/* ---------- 마진율 계산기 (기존 로직) ---------- */
+(function(){
   var STORAGE_KEY = 'margin_calc_rows_v1';
   var rowsEl = document.getElementById('rows');
   var data = [];
+  var rowRefs = [];
 
-  function loadInit() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        var parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length) return parsed;
+  function loadInit(){
+    try{ var raw=localStorage.getItem(STORAGE_KEY); if(raw){var p=JSON.parse(raw); if(Array.isArray(p)&&p.length) return p;} }catch(e){}
+    return [{ name:'예시 상품', cost:10000, price:25000, fee:10 }];
+  }
+  function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
+  function fmt(n){ if(!isFinite(n)) return '-'; return Math.round(n).toLocaleString('ko-KR')+'원'; }
+
+  function recalc(){
+    var sumSale=0,sumCost=0,sumFee=0;
+    data.forEach(function(row,idx){
+      var cost=Number(row.cost)||0, price=Number(row.price)||0, feeRate=Number(row.fee)||0;
+      var feeAmount=price*(feeRate/100), net=price-feeAmount, margin=net-cost;
+      var rate = price>0 ? (margin/price)*100 : 0;
+      sumSale+=price; sumCost+=cost; sumFee+=feeAmount;
+      var r=rowRefs[idx];
+      if(r){
+        r.tdNet.textContent=fmt(net);
+        r.tdMargin.textContent=fmt(margin); r.tdMargin.className='margin-cell '+(margin>=0?'good':'bad');
+        r.tdRate.textContent=(price>0?rate.toFixed(1):'0.0')+'%'; r.tdRate.className='margin-cell '+(rate>=0?'good':'bad');
       }
-    } catch (e) {}
-    return [
-      { name: '예시 상품', cost: 10000, price: 25000, fee: 10 }
-    ];
-  }
-
-  function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
-  }
-
-  function fmt(n) {
-    if (!isFinite(n)) return '-';
-    return Math.round(n).toLocaleString('ko-KR') + '원';
-  }
-
-  function render() {
-    rowsEl.innerHTML = '';
-    if (data.length === 0) {
-      var tr = document.createElement('tr');
-      tr.innerHTML = '<td colspan="6" class="empty">상품을 추가해주세요</td>';
-      rowsEl.appendChild(tr);
-    }
-    var sumSale = 0, sumCost = 0, sumFee = 0;
-
-    data.forEach(function (row, idx) {
-      var cost = Number(row.cost) || 0;
-      var price = Number(row.price) || 0;
-      var feeRate = Number(row.fee) || 0;
-      var feeAmount = price * (feeRate / 100);
-      var netReceive = price - feeAmount;
-      var margin = netReceive - cost;
-      var rate = price > 0 ? (margin / price) * 100 : 0;
-      sumSale += price;
-      sumCost += cost;
-      sumFee += feeAmount;
-
-      var tr = document.createElement('tr');
-
-      var tdName = document.createElement('td');
-      var nameInput = document.createElement('input');
-      nameInput.type = 'text';
-      nameInput.placeholder = '상품명';
-      nameInput.value = row.name || '';
-      nameInput.addEventListener('input', function (e) {
-        data[idx].name = e.target.value;
-        save();
-      });
-      tdName.appendChild(nameInput);
-
-      var tdCost = document.createElement('td');
-      var costInput = document.createElement('input');
-      costInput.type = 'number';
-      costInput.inputMode = 'decimal';
-      costInput.placeholder = '0';
-      costInput.value = row.cost === '' || row.cost == null ? '' : row.cost;
-      costInput.addEventListener('input', function (e) {
-        data[idx].cost = e.target.value;
-        save();
-        render();
-      });
-      tdCost.appendChild(costInput);
-
-      var tdPrice = document.createElement('td');
-      var priceInput = document.createElement('input');
-      priceInput.type = 'number';
-      priceInput.inputMode = 'decimal';
-      priceInput.placeholder = '0';
-      priceInput.value = row.price === '' || row.price == null ? '' : row.price;
-      priceInput.addEventListener('input', function (e) {
-        data[idx].price = e.target.value;
-        save();
-        render();
-      });
-      tdPrice.appendChild(priceInput);
-
-      var tdFee = document.createElement('td');
-      var feeInput = document.createElement('input');
-      feeInput.type = 'number';
-      feeInput.inputMode = 'decimal';
-      feeInput.placeholder = '0';
-      feeInput.value = row.fee === '' || row.fee == null ? '' : row.fee;
-      feeInput.addEventListener('input', function (e) {
-        data[idx].fee = e.target.value;
-        save();
-        render();
-      });
-      tdFee.appendChild(feeInput);
-
-      var tdNet = document.createElement('td');
-      tdNet.textContent = fmt(netReceive);
-
-      var tdMargin = document.createElement('td');
-      tdMargin.className = 'margin-cell ' + (margin >= 0 ? 'good' : 'bad');
-      tdMargin.textContent = fmt(margin);
-
-      var tdRate = document.createElement('td');
-      tdRate.className = 'margin-cell ' + (rate >= 0 ? 'good' : 'bad');
-      tdRate.textContent = (price > 0 ? rate.toFixed(1) : '0.0') + '%';
-
-      var tdDel = document.createElement('td');
-      var delBtn = document.createElement('button');
-      delBtn.className = 'del-btn';
-      delBtn.textContent = '✕';
-      delBtn.addEventListener('click', function () {
-        data.splice(idx, 1);
-        save();
-        render();
-      });
-      tdDel.appendChild(delBtn);
-
-      tr.appendChild(tdName);
-      tr.appendChild(tdCost);
-      tr.appendChild(tdPrice);
-      tr.appendChild(tdFee);
-      tr.appendChild(tdNet);
-      tr.appendChild(tdMargin);
-      tr.appendChild(tdRate);
-      tr.appendChild(tdDel);
-      rowsEl.appendChild(tr);
     });
-
-    var totalMargin = sumSale - sumFee - sumCost;
-    var avgRate = sumSale > 0 ? (totalMargin / sumSale) * 100 : 0;
-
-    document.getElementById('sumCount').textContent = data.length + '개';
-    document.getElementById('sumSale').textContent = fmt(sumSale);
-    document.getElementById('sumCost').textContent = fmt(sumCost);
-    document.getElementById('sumFee').textContent = fmt(sumFee);
-    document.getElementById('sumMargin').textContent = fmt(totalMargin);
-    document.getElementById('sumRate').textContent = (sumSale > 0 ? avgRate.toFixed(1) : '0.0') + '%';
+    var totalMargin=sumSale-sumFee-sumCost, avgRate=sumSale>0?(totalMargin/sumSale)*100:0;
+    document.getElementById('sumCount').textContent=data.length+'개';
+    document.getElementById('sumSale').textContent=fmt(sumSale);
+    document.getElementById('sumCost').textContent=fmt(sumCost);
+    document.getElementById('sumFee').textContent=fmt(sumFee);
+    document.getElementById('sumMargin').textContent=fmt(totalMargin);
+    document.getElementById('sumRate').textContent=(sumSale>0?avgRate.toFixed(1):'0.0')+'%';
   }
 
-  document.getElementById('addBtn').addEventListener('click', function () {
-    data.push({ name: '', cost: '', price: '', fee: '' });
-    save();
-    render();
-  });
+  function render(){
+    rowsEl.innerHTML=''; rowRefs=[];
+    if(!data.length){ rowsEl.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--sub);padding:20px;">상품을 추가해주세요</td></tr>'; recalc(); return; }
+    data.forEach(function(row, idx){
+      var tr=document.createElement('tr');
+      var tdName=document.createElement('td');
+      var ni=document.createElement('input'); ni.type='text'; ni.placeholder='상품명'; ni.value=row.name||'';
+      ni.addEventListener('input', function(e){ data[idx].name=e.target.value; save(); });
+      tdName.appendChild(ni);
 
-  document.getElementById('clearBtn').addEventListener('click', function () {
-    if (data.length === 0) return;
-    if (confirm('전체 상품을 삭제할까요?')) {
-      data = [];
-      save();
-      render();
-    }
+      function numField(key, ph){
+        var td=document.createElement('td');
+        var inp=document.createElement('input'); inp.type='number'; inp.inputMode='decimal'; inp.placeholder=ph;
+        inp.value = row[key]==='' || row[key]==null ? '' : row[key];
+        inp.addEventListener('input', function(e){ data[idx][key]=e.target.value; save(); recalc(); });
+        td.appendChild(inp); return td;
+      }
+      var tdCost=numField('cost','0'), tdPrice=numField('price','0'), tdFee=numField('fee','0');
+      var tdNet=document.createElement('td');
+      var tdMargin=document.createElement('td'); tdMargin.className='margin-cell';
+      var tdRate=document.createElement('td'); tdRate.className='margin-cell';
+      var tdDel=document.createElement('td');
+      var del=document.createElement('button'); del.className='del-btn'; del.textContent='✕';
+      del.addEventListener('click', function(){ data.splice(idx,1); save(); render(); });
+      tdDel.appendChild(del);
+
+      tr.appendChild(tdName); tr.appendChild(tdCost); tr.appendChild(tdPrice); tr.appendChild(tdFee);
+      tr.appendChild(tdNet); tr.appendChild(tdMargin); tr.appendChild(tdRate); tr.appendChild(tdDel);
+      rowsEl.appendChild(tr);
+      rowRefs.push({tdNet:tdNet, tdMargin:tdMargin, tdRate:tdRate});
+    });
+    recalc();
+  }
+
+  document.getElementById('addRow').addEventListener('click', function(){
+    data.push({name:'',cost:'',price:'',fee:''}); save(); render();
+  });
+  document.getElementById('clearRows').addEventListener('click', function(){
+    if(!data.length) return;
+    if(confirm('전체 상품을 삭제할까요?')){ data=[]; save(); render(); }
   });
 
   data = loadInit();
