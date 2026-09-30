@@ -122,20 +122,24 @@
   <div class="page" id="page-margin">
     <div class="summary">
       <div class="box"><div class="label">상품 수</div><div class="value" id="sumCount">0</div></div>
-      <div class="box"><div class="label">총 판매가</div><div class="value" id="sumSale">0원</div></div>
+      <div class="box"><div class="label">총 제안가</div><div class="value" id="sumSale">0원</div></div>
       <div class="box"><div class="label">총 원가</div><div class="value" id="sumCost">0원</div></div>
       <div class="box"><div class="label">총 수수료</div><div class="value" id="sumFee">0원</div></div>
-      <div class="box"><div class="label">총 마진</div><div class="value" id="sumMargin">0원</div></div>
-      <div class="box"><div class="label">평균 마진율</div><div class="value" id="sumRate">0%</div></div>
+      <div class="box"><div class="label">총 상품이익</div><div class="value" id="sumMargin">0원</div></div>
+      <div class="box"><div class="label">평균 상품이익률</div><div class="value" id="sumRate">0%</div></div>
     </div>
     <div class="table-scroll">
-      <table><thead><tr><th>상품명</th><th>원가</th><th>판매가</th><th>수수료율(%)</th>
-        <th>실수령액</th><th>마진</th><th>마진율</th><th></th></tr></thead>
+      <table><thead><tr><th>상품명</th><th>TAG가</th><th>제안가</th><th>할인율(%)</th><th>원가</th>
+        <th>수수료율(%)</th><th>물류비</th><th>기타</th><th>상품이익</th><th>상품이익%</th><th></th></tr></thead>
         <tbody id="rows"></tbody></table>
     </div>
     <div class="toolbar">
       <button class="primary" id="addRow">＋ 상품 추가</button>
       <button class="ghost" id="clearRows">전체 삭제</button>
+    </div>
+    <div style="color:var(--sub);font-size:11.5px;margin-top:10px;line-height:1.6;">
+      할인율 = (TAG가−제안가)÷TAG가×100 · 상품이익 = 제안가×(1−수수료율)−원가−물류비−기타 ·
+      상품이익% = 상품이익÷제안가×100
     </div>
   </div>
 </div>
@@ -274,46 +278,56 @@ document.querySelectorAll('.tab').forEach(function(btn){
   renderCal(); renderPanel();
 })();
 
-/* ---------- 마진율 계산기 (기존 로직) ---------- */
+/* ---------- 마진율 계산기 ---------- */
 (function(){
-  var STORAGE_KEY = 'margin_calc_rows_v1';
+  var STORAGE_KEY = 'margin_calc_rows_v2';
   var rowsEl = document.getElementById('rows');
   var data = [];
   var rowRefs = [];
 
   function loadInit(){
     try{ var raw=localStorage.getItem(STORAGE_KEY); if(raw){var p=JSON.parse(raw); if(Array.isArray(p)&&p.length) return p;} }catch(e){}
-    return [{ name:'예시 상품', cost:10000, price:25000, fee:10 }];
+    return [{ name:'예시 상품', tag:59000, offer:39900, cost:11330, fee:43, logi:0, etc:0 }];
   }
   function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
   function fmt(n){ if(!isFinite(n)) return '-'; return Math.round(n).toLocaleString('ko-KR')+'원'; }
+  function num(v){ return Number(v)||0; }
+
+  function calcRow(row){
+    var tag=num(row.tag), offer=num(row.offer), cost=num(row.cost), fee=num(row.fee), logi=num(row.logi), etc=num(row.etc);
+    var discountRate = tag>0 ? (tag-offer)/tag*100 : 0;
+    var supply = offer*(1-fee/100); // 수수료 반영 실질 공급가
+    var profit = supply - cost - logi - etc; // 상품이익
+    var profitRate = offer>0 ? (profit/offer)*100 : 0;
+    return { discountRate:discountRate, supply:supply, profit:profit, profitRate:profitRate };
+  }
 
   function recalc(){
-    var sumSale=0,sumCost=0,sumFee=0;
+    var sumOffer=0,sumCost=0,sumFee=0,sumProfit=0;
     data.forEach(function(row,idx){
-      var cost=Number(row.cost)||0, price=Number(row.price)||0, feeRate=Number(row.fee)||0;
-      var feeAmount=price*(feeRate/100), net=price-feeAmount, margin=net-cost;
-      var rate = price>0 ? (margin/price)*100 : 0;
-      sumSale+=price; sumCost+=cost; sumFee+=feeAmount;
+      var c=calcRow(row);
+      var offer=num(row.offer), fee=num(row.fee);
+      var feeAmount = offer*(fee/100);
+      sumOffer+=offer; sumCost+=num(row.cost); sumFee+=feeAmount; sumProfit+=c.profit;
       var r=rowRefs[idx];
       if(r){
-        r.tdNet.textContent=fmt(net);
-        r.tdMargin.textContent=fmt(margin); r.tdMargin.className='margin-cell '+(margin>=0?'good':'bad');
-        r.tdRate.textContent=(price>0?rate.toFixed(1):'0.0')+'%'; r.tdRate.className='margin-cell '+(rate>=0?'good':'bad');
+        r.tdDiscount.textContent = (c.discountRate).toFixed(1)+'%';
+        r.tdProfit.textContent=fmt(c.profit); r.tdProfit.className='margin-cell '+(c.profit>=0?'good':'bad');
+        r.tdRate.textContent=c.profitRate.toFixed(1)+'%'; r.tdRate.className='margin-cell '+(c.profitRate>=0?'good':'bad');
       }
     });
-    var totalMargin=sumSale-sumFee-sumCost, avgRate=sumSale>0?(totalMargin/sumSale)*100:0;
+    var avgRate = sumOffer>0 ? (sumProfit/sumOffer)*100 : 0;
     document.getElementById('sumCount').textContent=data.length+'개';
-    document.getElementById('sumSale').textContent=fmt(sumSale);
+    document.getElementById('sumSale').textContent=fmt(sumOffer);
     document.getElementById('sumCost').textContent=fmt(sumCost);
     document.getElementById('sumFee').textContent=fmt(sumFee);
-    document.getElementById('sumMargin').textContent=fmt(totalMargin);
-    document.getElementById('sumRate').textContent=(sumSale>0?avgRate.toFixed(1):'0.0')+'%';
+    document.getElementById('sumMargin').textContent=fmt(sumProfit);
+    document.getElementById('sumRate').textContent=(sumOffer>0?avgRate.toFixed(1):'0.0')+'%';
   }
 
   function render(){
     rowsEl.innerHTML=''; rowRefs=[];
-    if(!data.length){ rowsEl.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--sub);padding:20px;">상품을 추가해주세요</td></tr>'; recalc(); return; }
+    if(!data.length){ rowsEl.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--sub);padding:20px;">상품을 추가해주세요</td></tr>'; recalc(); return; }
     data.forEach(function(row, idx){
       var tr=document.createElement('tr');
       var tdName=document.createElement('td');
@@ -328,25 +342,27 @@ document.querySelectorAll('.tab').forEach(function(btn){
         inp.addEventListener('input', function(e){ data[idx][key]=e.target.value; save(); recalc(); });
         td.appendChild(inp); return td;
       }
-      var tdCost=numField('cost','0'), tdPrice=numField('price','0'), tdFee=numField('fee','0');
-      var tdNet=document.createElement('td');
-      var tdMargin=document.createElement('td'); tdMargin.className='margin-cell';
+      var tdTag=numField('tag','0'), tdOffer=numField('offer','0');
+      var tdDiscount=document.createElement('td'); tdDiscount.className='margin-cell';
+      var tdCost=numField('cost','0'), tdFee=numField('fee','0'), tdLogi=numField('logi','0'), tdEtc=numField('etc','0');
+      var tdProfit=document.createElement('td'); tdProfit.className='margin-cell';
       var tdRate=document.createElement('td'); tdRate.className='margin-cell';
       var tdDel=document.createElement('td');
       var del=document.createElement('button'); del.className='del-btn'; del.textContent='✕';
       del.addEventListener('click', function(){ data.splice(idx,1); save(); render(); });
       tdDel.appendChild(del);
 
-      tr.appendChild(tdName); tr.appendChild(tdCost); tr.appendChild(tdPrice); tr.appendChild(tdFee);
-      tr.appendChild(tdNet); tr.appendChild(tdMargin); tr.appendChild(tdRate); tr.appendChild(tdDel);
+      tr.appendChild(tdName); tr.appendChild(tdTag); tr.appendChild(tdOffer); tr.appendChild(tdDiscount);
+      tr.appendChild(tdCost); tr.appendChild(tdFee); tr.appendChild(tdLogi); tr.appendChild(tdEtc);
+      tr.appendChild(tdProfit); tr.appendChild(tdRate); tr.appendChild(tdDel);
       rowsEl.appendChild(tr);
-      rowRefs.push({tdNet:tdNet, tdMargin:tdMargin, tdRate:tdRate});
+      rowRefs.push({tdDiscount:tdDiscount, tdProfit:tdProfit, tdRate:tdRate});
     });
     recalc();
   }
 
   document.getElementById('addRow').addEventListener('click', function(){
-    data.push({name:'',cost:'',price:'',fee:''}); save(); render();
+    data.push({name:'',tag:'',offer:'',cost:'',fee:'',logi:'',etc:''}); save(); render();
   });
   document.getElementById('clearRows').addEventListener('click', function(){
     if(!data.length) return;
